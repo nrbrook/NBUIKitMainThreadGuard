@@ -43,7 +43,7 @@ import UIKit
         private func nb_mainThreadCheck() {
             // iOS 8 layouts the MFMailComposeController in a background thread on an UIKit queue.
             // https://github.com/PSPDFKit/PSPDFKit/issues/1423
-            assert(NSThread.isMainThread() || String.fromCString(strstr(dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL), "UIKit")) != nil, "\nERROR: All calls to UIKit need to happen on the main thread. You have a bug in your code. Use dispatch_async(dispatch_get_main_queue()) { } if you're unsure what thread you're in.\n\nBreak on nb_mainThreadCheck to find out where.\n\nStacktrace: \(NSThread.callStackSymbols)")
+            assert(NSThread.isMainThread() || String.fromCString(dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL))?.hasPrefix("UIKit") == true, "\nERROR: All calls to UIKit need to happen on the main thread. You have a bug in your code. Use dispatch_async(dispatch_get_main_queue()) { } if you're unsure what thread you're in.\n\nBreak on nb_mainThreadCheck to find out where.\n\nStacktrace: \(NSThread.callStackSymbols)")
         }
         
         func nb_setNeedsLayout() {
