@@ -20,21 +20,21 @@ import UIKit
             }
             
             dispatch_once(&Static.token) {
-                let swizzle = { (originalSelector: Selector, swizzledSelector: Selector) in
-                    let originalMethod = class_getInstanceMethod(self, originalSelector)
-                    let swizzledMethod = class_getInstanceMethod(self, swizzledSelector)
+                let swizzle = { (cls: AnyClass, originalSelector: Selector, swizzledSelector: Selector) in
+                    let originalMethod = class_getInstanceMethod(cls, originalSelector)
+                    let swizzledMethod = class_getInstanceMethod(cls, swizzledSelector)
                     
-                    let didAddMethod = class_addMethod(self, originalSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod))
+                    let didAddMethod = class_addMethod(cls, originalSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod))
                     
                     if didAddMethod {
-                        class_replaceMethod(self, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod))
+                        class_replaceMethod(cls, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod))
                     } else {
                         method_exchangeImplementations(originalMethod, swizzledMethod);
                     }
                 }
-                swizzle(Selector("setNeedsLayout"), Selector("nb_setNeedsLayout"))
-                swizzle(Selector("setNeedsDisplay"), Selector("nb_setNeedsDisplay"))
-                swizzle(Selector("setNeedsDisplayInRect:"), Selector("nb_setNeedsDisplayInRect:"))
+                for method in ["setNeedsLayout", "setNeedsDisplay", "setNeedsDisplayInRect"] {
+                    swizzle(self, Selector(method), Selector("nb_\(method)"))
+                }
             }
         }
         
