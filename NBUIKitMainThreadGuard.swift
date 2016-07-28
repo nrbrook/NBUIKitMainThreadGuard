@@ -8,18 +8,43 @@ import UIKit
 
 #if DEBUG
     
+    // Shim for dispatch_once and DISPATCH_CURRENT_QUEUE_LABEL in swift 3 from http://stackoverflow.com/a/38311178 and https://lists.swift.org/pipermail/swift-users/Week-of-Mon-20160613/002280.html
+    public extension DispatchQueue {
+        
+        private static var _onceTracker = [String]()
+        
+        /**
+         Executes a block of code, associated with a unique token, only once.  The code is thread safe and will
+         only execute the code once even in the presence of multithreaded calls.
+         
+         - parameter token: A unique reverse DNS style name such as com.vectorform.<name> or a GUID
+         - parameter block: Block to execute once
+         */
+        public class func once(token: String, block:@noescape(Void)->Void) {
+            objc_sync_enter(self); defer { objc_sync_exit(self) }
+            
+            if _onceTracker.contains(token) {
+                return
+            }
+            
+            _onceTracker.append(token)
+            block()
+        }
+        
+        class var currentLabel: String? {
+            return String(validatingUTF8: __dispatch_queue_get_label(nil))
+        }
+    }
+    
     extension UIView {
         public override class func initialize() {
-            struct Static {
-                static var token: dispatch_once_t = 0
-            }
             
             // make sure this isn't a subclass
             if self !== UIView.self {
                 return
             }
             
-            dispatch_once(&Static.token) {
+            DispatchQueue.once(token: "NBUIKitMainThreadGuardInitialize", block: { () in
                 let swizzle = { (cls: AnyClass, originalSelector: Selector, swizzledSelector: Selector) in
                     let originalMethod = class_getInstanceMethod(cls, originalSelector)
                     let swizzledMethod = class_getInstanceMethod(cls, swizzledSelector)
@@ -35,7 +60,7 @@ import UIKit
                 for method in ["setNeedsLayout", "setNeedsDisplay", "setNeedsDisplayInRect"] {
                     swizzle(self, Selector(method), Selector("nb_\(method)"))
                 }
-            }
+            })
         }
         
         // MARK: - Method Swizzling
@@ -43,8 +68,8 @@ import UIKit
         private func nb_mainThreadCheck() {
             // iOS 8 layouts the MFMailComposeController in a background thread on an UIKit queue.
             // https://github.com/PSPDFKit/PSPDFKit/issues/1423
-            if !NSThread.isMainThread() && String.fromCString(dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL))?.hasPrefix("UIKit") != true {
-                let stack = NSThread.callStackSymbols().joinWithSeparator("\n")
+            if !Thread.isMainThread && DispatchQueue.currentLabel?.hasPrefix("UIKit") != true {
+                let stack = Thread.callStackSymbols.joined(separator: "\n")
                 assert(false, "\nERROR: All calls to UIKit need to happen on the main thread. You have a bug in your code. Use dispatch_async(dispatch_get_main_queue()) { } if you're unsure what thread you're in.\n\nBreak on nb_mainThreadCheck to find out where.\n\nStacktrace:\n\(stack)")
             }
         }
@@ -61,7 +86,7 @@ import UIKit
         
         func nb_setNeedsDisplayInRect(rect: CGRect) {
             self.nb_mainThreadCheck()
-            self.nb_setNeedsDisplayInRect(rect)
+            self.nb_setNeedsDisplayInRect(rect: rect)
         }
     }
     
