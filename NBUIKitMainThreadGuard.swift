@@ -37,7 +37,7 @@ import UIKit
     }
     
     extension UIView {
-        public override class func initialize() {
+        open override class func initialize() {
             
             // make sure this isn't a subclass
             if self !== UIView.self {
