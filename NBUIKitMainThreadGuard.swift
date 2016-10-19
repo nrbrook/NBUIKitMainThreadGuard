@@ -6,10 +6,10 @@
 
 import UIKit
 
-#if DEBUG
+#if false
     
     // Shim for dispatch_once and DISPATCH_CURRENT_QUEUE_LABEL in swift 3 from http://stackoverflow.com/a/38311178 and https://lists.swift.org/pipermail/swift-users/Week-of-Mon-20160613/002280.html
-    public extension DispatchQueue {
+    fileprivate extension DispatchQueue {
         
         private static var _onceTracker = [String]()
         
@@ -20,7 +20,7 @@ import UIKit
          - parameter token: A unique reverse DNS style name such as com.vectorform.<name> or a GUID
          - parameter block: Block to execute once
          */
-        public class func once(token: String, block:(Void)->Void) {
+        class func once(token: String, block:(Void)->Void) {
             objc_sync_enter(self); defer { objc_sync_exit(self) }
             
             if _onceTracker.contains(token) {
@@ -36,8 +36,8 @@ import UIKit
         }
     }
     
-    extension UIView {
-        open override class func initialize() {
+    public extension UIView {
+        override open class func initialize() {
             
             // make sure this isn't a subclass
             if self !== UIView.self {
