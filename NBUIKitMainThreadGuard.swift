@@ -16,10 +16,6 @@ import UIKit
     }
     
     extension UIView {
-        open override class func initialize() {
-            self.classInit
-        }
-        
         static let classInit : () = {
             let swizzle = { (cls: AnyClass, originalSelector: Selector, swizzledSelector: Selector) in
                 let originalMethod = class_getInstanceMethod(cls, originalSelector)
