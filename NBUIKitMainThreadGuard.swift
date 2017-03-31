@@ -30,14 +30,13 @@ import UIKit
                 if didAddMethod {
                     class_replaceMethod(cls, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod))
                 } else {
-                    method_exchangeImplementations(originalMethod, swizzledMethod);
+                    method_exchangeImplementations(originalMethod, swizzledMethod)
                 }
             }
             for method in ["setNeedsLayout", "setNeedsDisplay", "setNeedsDisplayInRect"] {
                 swizzle(UIView.self, Selector(method), Selector("nb_\(method)"))
             }
         }()
-        
         
         // MARK: - Method Swizzling
         
